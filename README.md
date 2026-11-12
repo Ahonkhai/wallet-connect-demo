@@ -1,6 +1,6 @@
 # Wallet Connect Demo
 
-A single page that connects to real wallets on EVM chains, Solana, Bitcoin and TON, with a network picker and a log of each connection and network switch.
+A single page that connects to real wallets on EVM chains, Solana, Bitcoin and TON, with a network picker, message signing, native-coin sending, and a log of every wallet request.
 
 Wallet connections use Reown AppKit. The project ID in `src/main.js` comes from https://cloud.reown.com.
 

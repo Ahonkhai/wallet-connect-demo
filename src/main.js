@@ -8,6 +8,8 @@ import {
   sepolia, baseSepolia, arbitrumSepolia, optimismSepolia, polygonAmoy, bscTestnet,
   solana, solanaDevnet, bitcoin, bitcoinTestnet, ton, tonTestnet,
 } from '@reown/appkit/networks';
+import { verifyMessage, parseUnits } from 'ethers';
+import { Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 // Chain logos, bundled into the page so they work offline.
 import eth from '../node_modules/cryptocurrency-icons/svg/color/eth.svg';
 import btc from '../node_modules/@web3icons/core/dist/svgs/networks/background/bitcoin.svg.js';
@@ -113,24 +115,42 @@ function current() {
   };
 }
 
-const FAMILY = { eip155: 'EVM (eip155)', solana: 'Solana', bip122: 'Bitcoin (bip122)', ton: 'TON' };
+// The four chain families. Each has its own native coin, decimals and wallet calls.
+const FAMILY = {
+  eip155: { label: 'EVM (eip155)', decimals: 18, amount: '0', unit: (c) => c.network?.nativeCurrency?.symbol || 'ETH' },
+  solana: { label: 'Solana', decimals: 9, amount: '0', unit: () => 'SOL' },
+  bip122: { label: 'Bitcoin (bip122)', decimals: 8, amount: '0.00001', unit: () => 'BTC' },
+  ton: { label: 'TON', decimals: 9, amount: '0.01', unit: () => 'TON' },
+};
+let formKey = '';
 let lastAddress = '';
 let lastSessionHtml = null;
 
 function render() {
   const c = current();
   const on = !!(c.address && c.provider);
+  const fam = FAMILY[c.ns];
+  $('sign').disabled = !on;
+  $('send').disabled = !(on && fam);
+  // Prefill the send form whenever the account or network changes.
+  const key = on ? `${c.ns}|${c.address}|${c.network?.caipNetworkId}` : '';
+  if (key !== formKey) {
+    formKey = key;
+    $('to').value = on ? c.address : '';
+    $('amount').value = on && fam ? fam.amount : '';
+    $('unit').textContent = on && fam ? fam.unit(c) : '';
+  }
   $('connect').textContent = on ? `${c.address.slice(0, 6)}…${c.address.slice(-4)}` : 'Connect Wallet';
   // Record connects and disconnects in the wire log.
   const address = on ? c.address : '';
   if (address !== lastAddress) {
     lastAddress = address;
-    const entry = logCall(on ? FAMILY[c.ns] || c.ns : 'Wallet', on ? 'connect' : 'disconnect');
+    const entry = logCall(on ? FAMILY[c.ns]?.label || c.ns : 'Wallet', on ? 'connect' : 'disconnect');
     entry.ok(on ? { wallet: c.wallet?.name, address: c.address, network: c.network?.caipNetworkId } : 'disconnected');
   }
   const sessionHtml = on
     ? `<span class="k">wallet: </span>${esc(c.wallet?.name || 'unknown')}<br>` +
-      `<span class="k">chain family: </span>${esc(FAMILY[c.ns] || c.ns)}<br>` +
+      `<span class="k">chain family: </span>${esc(FAMILY[c.ns]?.label || c.ns)}<br>` +
       `<span class="k">address: </span>${esc(c.address)}<br>` +
       `<span class="k">network: </span>${esc(c.network?.name || '?')} <span class="k">(${esc(c.network?.caipNetworkId || '')})</span>`
     : '<span class="k">Not connected.</span>';
@@ -178,3 +198,89 @@ modal.subscribeAccount(render);
 modal.subscribeNetwork(render);
 modal.subscribeProviders(render);
 render();
+
+/* ---------- actions ---------- */
+$('sign').onclick = async () => {
+  const c = current();
+  const msg = $('msg').value;
+  const bytes = enc.encode(msg);
+  try {
+    if (c.ns === 'eip155') {
+      const params = [toHex(bytes), c.address];
+      const entry = logCall('EVM', 'personal_sign', params);
+      let sig;
+      try { sig = await c.provider.request({ method: 'personal_sign', params }); entry.ok(sig); }
+      catch (e) { entry.fail(e); throw e; }
+      let check = '';
+      try {
+        const who = verifyMessage(msg, sig);
+        const match = who.toLowerCase() === c.address.toLowerCase();
+        check = `<br><span class="${match ? 'good' : 'bad'}">Recovered signer ${esc(who)} ${match ? 'matches your address.' : 'does not match your address.'}</span>`;
+      } catch { /* smart-contract wallets return signatures that cannot be checked this way */ }
+      $('sig').innerHTML = `<span class="k">signature: </span>${esc(sig)}${check}`;
+    } else if (c.ns === 'solana') {
+      const entry = logCall('Solana', 'signMessage(bytes)', bytes);
+      let sig;
+      try { sig = b58(new Uint8Array(await c.provider.signMessage(bytes))); entry.ok({ signature: sig }); }
+      catch (e) { entry.fail(e); throw e; }
+      $('sig').innerHTML = `<span class="k">signature: </span>${esc(sig)}`;
+    } else if (c.ns === 'bip122') {
+      const params = { address: c.address, message: msg };
+      const entry = logCall('Bitcoin', 'signMessage', params);
+      let sig;
+      try { sig = await c.provider.signMessage(params); entry.ok(sig); }
+      catch (e) { entry.fail(e); throw e; }
+      $('sig').innerHTML = `<span class="k">signature: </span>${esc(sig)}`;
+    } else if (c.ns === 'ton') {
+      const params = { type: 'text', from: c.address, text: msg };
+      const entry = logCall('TON', 'signData', params);
+      let sig;
+      try { sig = await c.provider.signData(params); entry.ok(sig); }
+      catch (e) { entry.fail(e); throw e; }
+      $('sig').innerHTML = `<span class="k">signature: </span>${esc(sig)}`;
+    }
+  } catch (e) { $('sig').innerHTML = `<span class="bad">${esc(errText(e))}</span>`; }
+};
+
+$('send').onclick = async () => {
+  const c = current();
+  const fam = FAMILY[c.ns];
+  const to = $('to').value.trim();
+  const unit = fam.unit(c);
+  let entry;
+  try {
+    if (!to) throw new Error('Enter a recipient address.');
+    // Every chain counts in its smallest unit: wei, lamports, satoshis, nanotons.
+    const smallest = parseUnits($('amount').value.trim() || '0', fam.decimals);
+    let id;
+    if (c.ns === 'eip155') {
+      const params = [{ from: c.address, to, value: '0x' + smallest.toString(16) }];
+      entry = logCall('EVM', 'eth_sendTransaction', params);
+      id = await c.provider.request({ method: 'eth_sendTransaction', params });
+    } else if (c.ns === 'solana') {
+      // Solana needs a recent blockhash from a node before the wallet can sign.
+      const rpc = `https://rpc.walletconnect.org/v1/?chainId=${c.network.caipNetworkId}&projectId=${PROJECT_ID}`;
+      const connection = new Connection(rpc, 'confirmed');
+      const from = new PublicKey(c.address);
+      const { blockhash } = await connection.getLatestBlockhash();
+      const tx = new Transaction({ feePayer: from, recentBlockhash: blockhash }).add(
+        SystemProgram.transfer({ fromPubkey: from, toPubkey: new PublicKey(to), lamports: smallest })
+      );
+      entry = logCall('Solana', 'sendTransaction(transaction, connection)', { from: c.address, to, lamports: smallest.toString(), recentBlockhash: blockhash });
+      id = await c.provider.sendTransaction(tx, connection);
+    } else if (c.ns === 'bip122') {
+      const params = { recipient: to, amount: smallest.toString() };
+      entry = logCall('Bitcoin', 'sendTransfer', params);
+      id = await c.provider.sendTransfer(params);
+    } else if (c.ns === 'ton') {
+      const params = { validUntil: Math.floor(Date.now() / 1000) + 300, messages: [{ address: to, amount: smallest.toString() }] };
+      entry = logCall('TON', 'sendMessage', params);
+      id = await c.provider.sendMessage(params);
+    }
+    entry.ok(id);
+    $('tx').innerHTML = `<span class="k">${c.ns === 'ton' ? 'signed message' : 'transaction id'}: </span>${esc(id)}<br><span class="good">The wallet signed and broadcast ${esc($('amount').value || '0')} ${esc(unit)}.</span>`;
+  } catch (e) {
+    if (entry) entry.fail(e);
+    $('tx').innerHTML = `<span class="bad">${esc(errText(e))}</span>`;
+  }
+};

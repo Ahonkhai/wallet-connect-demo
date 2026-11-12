@@ -29,7 +29,7 @@ h3 { font-size: 15px; }
 .label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .row > input { flex: 1 1 160px; }
-input[type="text"] { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0; }
+input[type="text"] { font: inherit; font-size: 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0; }
 button { font: 600 14px var(--font-body); padding: 8px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); }
 button.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -115,11 +115,28 @@ button.chip { transition: background-color 0.2s var(--ease), color 0.2s var(--ea
       <div class="out" id="session"><span class="k">Not connected.</span></div>
     </section>
 
+    <section class="panel">
+      <h2>Use the connection</h2>
+      <div class="row">
+        <input type="text" id="msg" aria-label="Message to sign" value="I am learning how wallets sign things.">
+        <button id="sign" disabled>Sign message</button>
+      </div>
+      <div class="out" id="sig"><span class="k">Signing a message is free and stays off-chain.</span></div>
+      <h3>Send the native coin</h3>
+      <label class="label" for="to">To (starts as your own address)</label>
+      <input type="text" id="to" autocomplete="off" spellcheck="false">
+      <label class="label" for="amount">Amount <span id="unit"></span></label>
+      <div class="row">
+        <input type="text" id="amount" inputmode="decimal" autocomplete="off">
+        <button id="send" disabled>Send</button>
+      </div>
+      <div class="out" id="tx"><span class="k">This sends a real transaction and costs a network fee. Use a testnet while learning.</span></div>
+    </section>
   </div>
 
   <section style="display:flex;flex-direction:column;gap:12px">
     <div class="log-head"><h2>Wire log</h2><button class="ghost" id="log-clear">Clear</button></div>
-    <p class="empty" id="log-empty">Nothing yet. Connect a wallet or switch network and it appears here.</p>
+    <p class="empty" id="log-empty">Nothing yet. Connect a wallet, switch network, sign or send, and it appears here.</p>
     <ol id="log"></ol>
   </section>
 </div>
