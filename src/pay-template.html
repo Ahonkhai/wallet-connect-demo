@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Pay</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #000000; --surface: #111a19; --sunken: #070b0b; --ink: #e4eeec; --muted: #93a6a2;
+  --line: #2a3a38; --accent: #4fd1c0; --accent-ink: #06201c; --ok: #6fd691; --err: #ff8a80; --out: #8ab8f0;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--bg); overflow-x: clip; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); padding: 28px 16px 48px; }
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { margin: 0; font-weight: 650; text-wrap: balance; }
+h1 { font-size: 28px; letter-spacing: -0.01em; }
+h2 { font-size: 18px; }
+h3 { font-size: 15px; }
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 65ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.note { color: var(--muted); font-size: 13px; margin: 0; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row > input { flex: 1 1 160px; }
+input[type="text"] { font: inherit; font-size: 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0; }
+button { font: 600 14px var(--font-body); padding: 8px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); }
+button.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.out { font: 12.5px/1.5 var(--font-mono); background: var(--sunken); border-radius: 6px; padding: 8px 10px; overflow-wrap: anywhere; }
+.k { color: var(--muted); }
+.good { color: var(--ok); }
+.bad { color: var(--err); }
+
+/* Network dropdown */
+.dd-row { position: relative; }
+.dd-btn { display: inline-flex; align-items: center; gap: 10px; height: 40px; }
+.dd-btn .caret { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--muted); }
+.dd-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 10; width: 280px; max-width: 100%;
+  max-height: 340px; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+.dd-group { padding: 8px 8px 4px; }
+button.chip {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  padding: 8px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: 500 14px var(--font-body); text-align: left;
+}
+.ico { display: inline-flex; width: 22px; height: 22px; flex: none; }
+.ico svg { width: 22px; height: 22px; border-radius: 50%; display: block; box-shadow: 0 0 0 1px var(--line); }
+.chip-name, #net-name { display: inline-flex; align-items: center; gap: 10px; }
+button.chip:hover { background: var(--sunken); }
+button.chip small { font: 11px var(--font-mono); color: var(--muted); }
+button.chip[aria-pressed="true"] { color: var(--accent); }
+button.chip[aria-pressed="true"] small { color: var(--accent); }
+
+.log-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+#log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+#log li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: 12.5px/1.55 var(--font-mono); overflow-wrap: anywhere; }
+#log pre { margin: 0; white-space: pre-wrap; font: inherit; }
+#log .req { color: var(--out); }
+.empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 14px; margin: 0; }
+
+/* Connect button: black with white text. */
+button.connect { background: #000; color: #fff; border: 1px solid var(--line); height: 40px; }
+button.connect:hover { border-color: #fff; }
+
+/* Motion: slow-out easing, small distances. Turned off for people who ask for reduced motion. */
+:root { --ease: cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes slide { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.wrap > * { animation: rise 0.7s var(--ease) backwards; }
+/* The panel holding the network menu must sit above the wire log, or the log shows through the open menu. */
+.grid { position: relative; z-index: 5; }
+.wrap > *:nth-child(2) { animation-delay: 0.12s; }
+button { transition: background-color 0.25s var(--ease), border-color 0.25s var(--ease), color 0.25s var(--ease), transform 0.25s var(--ease); }
+button:active:not(:disabled) { transform: scale(0.98); }
+button.ghost:hover:not(:disabled) { border-color: var(--accent); }
+.dd-btn .caret { transition: transform 0.35s var(--ease); }
+.dd-btn[aria-expanded="true"] .caret { transform: rotate(180deg); }
+/* The menu fades and eases both ways, so it stays in the page and is shown with a class. */
+.dd-menu {
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-6px);
+  transition: opacity 0.28s var(--ease), transform 0.28s var(--ease), visibility 0s linear 0.28s;
+}
+.dd-menu.open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition-delay: 0s; }
+button.chip { transition: background-color 0.2s var(--ease), color 0.2s var(--ease); }
+#log li { animation: slide 0.5s var(--ease) both; }
+#session.flash { animation: rise 0.5s var(--ease); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Pay page: one narrow column of four steps. */
+.wrap.pay { max-width: 480px; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.steps > li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; }
+.steps .body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.num { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); display: grid; place-items: center; font: 600 13px var(--font-mono); transition: background-color 0.3s var(--ease), color 0.3s var(--ease), border-color 0.3s var(--ease); }
+.steps > li.done .num { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.amount-row { display: flex; align-items: center; gap: 10px; }
+.amount-row span { font: 600 14px var(--font-mono); color: var(--muted); }
+input[readonly] { color: var(--muted); }
+.out a { color: var(--accent); }
+.to { font: 12.5px/1.5 var(--font-mono); overflow-wrap: anywhere; }
+button.pay { height: 40px; }
+</style>
+</head>
+<body>
+<div class="wrap pay">
+  <section class="panel">
+    <div>
+      <h1>Pay</h1>
+      <p class="lede" id="ref" hidden></p>
+    </div>
+    <ol class="steps">
+      <li id="step-network">
+        <span class="num" aria-hidden="true">1</span>
+        <div class="body">
+          <h3>Select network</h3>
+          <div class="row dd-row">
+            <div class="dd">
+              <button class="ghost dd-btn" id="net-btn" aria-haspopup="true" aria-expanded="false" aria-controls="net-panel"><span id="net-name">Choose network</span><span class="caret" aria-hidden="true"></span></button>
+              <div class="dd-menu" id="net-panel"></div>
+            </div>
+          </div>
+          <p class="note" id="testnet-note">Test networks only. Payments here use test coins with no value.</p>
+        </div>
+      </li>
+      <li id="step-amount">
+        <span class="num" aria-hidden="true">2</span>
+        <div class="body">
+          <h3><label for="amount">Enter amount</label></h3>
+          <div class="amount-row"><input type="text" id="amount" inputmode="decimal" autocomplete="off" placeholder="0.00"><span id="unit"></span></div>
+        </div>
+      </li>
+      <li id="step-connect">
+        <span class="num" aria-hidden="true">3</span>
+        <div class="body">
+          <h3>Connect wallet</h3>
+          <div><button id="connect" class="connect">Connect Wallet</button></div>
+        </div>
+      </li>
+      <li id="step-approve">
+        <span class="num" aria-hidden="true">4</span>
+        <div class="body">
+          <h3>Approve transaction</h3>
+          <div><button id="pay" class="pay" disabled>Pay</button></div>
+          <div class="out" id="result" role="status"><span class="k">Your wallet shows the payment and asks you to approve it.</span></div>
+        </div>
+      </li>
+    </ol>
+    <p class="note">Paying to <span class="to" id="to"></span></p>
+  </section>
+</div>
+<script>/*BUNDLE*/</script>
+</body>
+</html>
