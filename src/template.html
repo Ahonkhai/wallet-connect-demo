@@ -68,22 +68,30 @@ button.chip[aria-pressed="true"] small { color: var(--accent); }
 #log .req { color: var(--out); }
 .empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 14px; margin: 0; }
 
-/* Motion: short and quiet. Turned off for people who ask for reduced motion. */
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@keyframes drop { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
-@keyframes slide { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
-.wrap > * { animation: rise 0.45s ease-out both; }
-.wrap > *:nth-child(2) { animation-delay: 0.08s; }
-button { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease; }
-button:active:not(:disabled) { transform: scale(0.97); }
+/* Connect button: black with white text. */
+button.connect { background: #000; color: #fff; border: 1px solid var(--line); height: 40px; }
+button.connect:hover { border-color: #fff; }
+
+/* Motion: slow-out easing, small distances. Turned off for people who ask for reduced motion. */
+:root { --ease: cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes slide { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.wrap > * { animation: rise 0.7s var(--ease) both; }
+.wrap > *:nth-child(2) { animation-delay: 0.12s; }
+button { transition: background-color 0.25s var(--ease), border-color 0.25s var(--ease), color 0.25s var(--ease), transform 0.25s var(--ease); }
+button:active:not(:disabled) { transform: scale(0.98); }
 button.ghost:hover:not(:disabled) { border-color: var(--accent); }
-.dd-btn .caret { transition: transform 0.2s ease; }
+.dd-btn .caret { transition: transform 0.35s var(--ease); }
 .dd-btn[aria-expanded="true"] .caret { transform: rotate(180deg); }
-.dd-menu { transform-origin: top left; animation: drop 0.16s ease-out; }
-button.chip { transition: background-color 0.12s ease, color 0.12s ease, padding-left 0.12s ease; }
-button.chip:hover { padding-left: 12px; }
-#log li { animation: slide 0.25s ease-out; }
-#session.flash { animation: rise 0.3s ease-out; }
+/* The menu fades and eases both ways, so it stays in the page and is shown with a class. */
+.dd-menu {
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-6px);
+  transition: opacity 0.28s var(--ease), transform 0.28s var(--ease), visibility 0s linear 0.28s;
+}
+.dd-menu.open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition-delay: 0s; }
+button.chip { transition: background-color 0.2s var(--ease), color 0.2s var(--ease); }
+#log li { animation: slide 0.5s var(--ease) both; }
+#session.flash { animation: rise 0.5s var(--ease); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -95,10 +103,10 @@ button.chip:hover { padding-left: 12px; }
     <section class="panel">
       <h2>Connect</h2>
       <div class="row dd-row">
-        <appkit-button></appkit-button>
+        <button id="connect" class="connect">Connect Wallet</button>
         <div class="dd">
           <button class="ghost dd-btn" id="net-btn" aria-haspopup="true" aria-expanded="false" aria-controls="net-panel"><span id="net-name">Choose network</span><span class="caret" aria-hidden="true"></span></button>
-          <div class="dd-menu" id="net-panel" hidden></div>
+          <div class="dd-menu" id="net-panel"></div>
         </div>
       </div>
       <p class="note">On a phone, picking a wallet opens that wallet's app. On a computer it shows a QR code, or uses the wallet's browser extension if installed.</p>

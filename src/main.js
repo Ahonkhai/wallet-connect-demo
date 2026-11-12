@@ -120,6 +120,7 @@ let lastSessionHtml = null;
 function render() {
   const c = current();
   const on = !!(c.address && c.provider);
+  $('connect').textContent = on ? `${c.address.slice(0, 6)}…${c.address.slice(-4)}` : 'Connect Wallet';
   // Record connects and disconnects in the wire log.
   const address = on ? c.address : '';
   if (address !== lastAddress) {
@@ -154,10 +155,10 @@ $('net-panel').innerHTML = GROUPS.map((g) =>
   g.nets.map((n) => `<button class="chip" data-id="${esc(caipId(n))}" aria-pressed="false"><span class="chip-name">${icon(n)}${esc(n.name)}</span><small>${familyTag(n)}</small></button>`).join('') +
   '').join('');
 function setMenu(open) {
-  $('net-panel').hidden = !open;
+  $('net-panel').classList.toggle('open', open);
   $('net-btn').setAttribute('aria-expanded', String(open));
 }
-$('net-btn').onclick = (ev) => { ev.stopPropagation(); setMenu($('net-panel').hidden); };
+$('net-btn').onclick = (ev) => { ev.stopPropagation(); setMenu(!$('net-panel').classList.contains('open')); };
 document.addEventListener('click', (ev) => { if (!ev.target.closest('.dd')) setMenu(false); });
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') setMenu(false); });
 $('net-panel').onclick = async (ev) => {
@@ -169,6 +170,9 @@ $('net-panel').onclick = async (ev) => {
   catch (e) { entry.fail(e); }
   render();
 };
+
+// Our own connect button: opens the wallet list, or the account view once connected.
+$('connect').onclick = () => modal.open();
 
 modal.subscribeAccount(render);
 modal.subscribeNetwork(render);
