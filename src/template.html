@@ -67,6 +67,26 @@ button.chip[aria-pressed="true"] small { color: var(--accent); }
 #log pre { margin: 0; white-space: pre-wrap; font: inherit; }
 #log .req { color: var(--out); }
 .empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 14px; margin: 0; }
+
+/* Motion: short and quiet. Turned off for people who ask for reduced motion. */
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes drop { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes slide { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+.wrap > * { animation: rise 0.45s ease-out both; }
+.wrap > *:nth-child(2) { animation-delay: 0.08s; }
+button { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease; }
+button:active:not(:disabled) { transform: scale(0.97); }
+button.ghost:hover:not(:disabled) { border-color: var(--accent); }
+.dd-btn .caret { transition: transform 0.2s ease; }
+.dd-btn[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.dd-menu { transform-origin: top left; animation: drop 0.16s ease-out; }
+button.chip { transition: background-color 0.12s ease, color 0.12s ease, padding-left 0.12s ease; }
+button.chip:hover { padding-left: 12px; }
+#log li { animation: slide 0.25s ease-out; }
+#session.flash { animation: rise 0.3s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
 </style>
 </head>
 <body>

@@ -115,6 +115,7 @@ function current() {
 
 const FAMILY = { eip155: 'EVM (eip155)', solana: 'Solana', bip122: 'Bitcoin (bip122)', ton: 'TON' };
 let lastAddress = '';
+let lastSessionHtml = null;
 
 function render() {
   const c = current();
@@ -126,12 +127,19 @@ function render() {
     const entry = logCall(on ? FAMILY[c.ns] || c.ns : 'Wallet', on ? 'connect' : 'disconnect');
     entry.ok(on ? { wallet: c.wallet?.name, address: c.address, network: c.network?.caipNetworkId } : 'disconnected');
   }
-  $('session').innerHTML = on
+  const sessionHtml = on
     ? `<span class="k">wallet: </span>${esc(c.wallet?.name || 'unknown')}<br>` +
       `<span class="k">chain family: </span>${esc(FAMILY[c.ns] || c.ns)}<br>` +
       `<span class="k">address: </span>${esc(c.address)}<br>` +
       `<span class="k">network: </span>${esc(c.network?.name || '?')} <span class="k">(${esc(c.network?.caipNetworkId || '')})</span>`
     : '<span class="k">Not connected.</span>';
+  // Only touch the box when its content changes, and replay its entrance animation then.
+  if (sessionHtml !== lastSessionHtml) {
+    const first = lastSessionHtml === null;
+    lastSessionHtml = sessionHtml;
+    $('session').innerHTML = sessionHtml;
+    if (!first) { $('session').classList.remove('flash'); void $('session').offsetWidth; $('session').classList.add('flash'); }
+  }
   // Network button label and highlighted chip follow the active network, connected or not.
   const active = modal.getCaipNetwork();
   const activeNet = allNets.find((n) => caipId(n) === String(active?.caipNetworkId));
