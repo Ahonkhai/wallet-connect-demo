@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Wallet Connect Demo</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #000000; --surface: #111a19; --sunken: #070b0b; --ink: #e4eeec; --muted: #93a6a2;
+  --line: #2a3a38; --accent: #4fd1c0; --accent-ink: #06201c; --ok: #6fd691; --err: #ff8a80; --out: #8ab8f0;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); padding: 28px 16px 48px; }
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { margin: 0; font-weight: 650; text-wrap: balance; }
+h1 { font-size: 28px; letter-spacing: -0.01em; }
+h2 { font-size: 18px; }
+h3 { font-size: 15px; }
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 65ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.note { color: var(--muted); font-size: 13px; margin: 0; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row > input { flex: 1 1 160px; }
+input[type="text"] { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0; }
+button { font: 600 14px var(--font-body); padding: 8px 14px; border-radius: 6px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); }
+button.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.out { font: 12.5px/1.5 var(--font-mono); background: var(--sunken); border-radius: 6px; padding: 8px 10px; overflow-wrap: anywhere; }
+.k { color: var(--muted); }
+.good { color: var(--ok); }
+.bad { color: var(--err); }
+
+/* Network dropdown */
+.dd-row { position: relative; }
+.dd-btn { display: inline-flex; align-items: center; gap: 10px; height: 40px; }
+.dd-btn .caret { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--muted); }
+.dd-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 10; width: 280px; max-width: 100%;
+  max-height: 340px; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+.dd-group { padding: 8px 8px 4px; }
+button.chip {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  padding: 8px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: 500 14px var(--font-body); text-align: left;
+}
+.ico { display: inline-flex; width: 22px; height: 22px; flex: none; }
+.ico svg { width: 22px; height: 22px; border-radius: 50%; display: block; box-shadow: 0 0 0 1px var(--line); }
+.chip-name, #net-name { display: inline-flex; align-items: center; gap: 10px; }
+button.chip:hover { background: var(--sunken); }
+button.chip small { font: 11px var(--font-mono); color: var(--muted); }
+button.chip[aria-pressed="true"] { color: var(--accent); }
+button.chip[aria-pressed="true"] small { color: var(--accent); }
+
+.log-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+#log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+#log li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: 12.5px/1.55 var(--font-mono); overflow-wrap: anywhere; }
+#log pre { margin: 0; white-space: pre-wrap; font: inherit; }
+#log .req { color: var(--out); }
+.empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 14px; margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Wallet Connect Demo</h1>
+    <p class="lede">Connects to real wallets on EVM chains, Solana, Bitcoin and TON. The connect button opens a wallet list (MetaMask, Trust, SafePal, Phantom and hundreds more). Every request and answer shows in the wire log.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Connect</h2>
+      <div class="row dd-row">
+        <appkit-button></appkit-button>
+        <div class="dd">
+          <button class="ghost dd-btn" id="net-btn" aria-haspopup="true" aria-expanded="false" aria-controls="net-panel"><span id="net-name">Choose network</span><span class="caret" aria-hidden="true"></span></button>
+          <div class="dd-menu" id="net-panel" hidden></div>
+        </div>
+      </div>
+      <p class="note">On a phone, picking a wallet opens that wallet's app. On a computer it shows a QR code, or uses the wallet's browser extension if installed.</p>
+      <div class="out" id="session"><span class="k">Not connected.</span></div>
+    </section>
+
+    <section class="panel">
+      <h2>Use the connection</h2>
+      <div class="row">
+        <input type="text" id="msg" aria-label="Message to sign" value="I am learning how wallets sign things.">
+        <button id="sign" disabled>Sign message</button>
+      </div>
+      <div class="out" id="sig"><span class="k">Signing a message is free and stays off-chain.</span></div>
+      <h3>Send the native coin</h3>
+      <label class="label" for="to">To (starts as your own address)</label>
+      <input type="text" id="to" autocomplete="off" spellcheck="false">
+      <label class="label" for="amount">Amount <span id="unit"></span></label>
+      <div class="row">
+        <input type="text" id="amount" inputmode="decimal" autocomplete="off">
+        <button id="send" disabled>Send</button>
+      </div>
+      <div class="out" id="tx"><span class="k">This sends a real transaction and costs a network fee. Use a testnet while learning.</span></div>
+    </section>
+  </div>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <div class="log-head"><h2>Wire log</h2><button class="ghost" id="log-clear">Clear</button></div>
+    <p class="empty" id="log-empty">Nothing sent yet. Connect a wallet and sign a message, and the requests appear here.</p>
+    <ol id="log"></ol>
+  </section>
+</div>
+<script>/*BUNDLE*/</script>
+</body>
+</html>

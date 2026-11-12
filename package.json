@@ -1,0 +1,25 @@
+{
+  "name": "wallet-connect-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@reown/appkit": "^1.8.24",
+    "@reown/appkit-adapter-bitcoin": "^1.8.24",
+    "@reown/appkit-adapter-ethers": "^1.8.24",
+    "@reown/appkit-adapter-solana": "^1.8.24",
+    "@reown/appkit-adapter-ton": "^1.8.24",
+    "@walletconnect/ethereum-provider": "^2.26.0",
+    "@web3icons/core": "^4.0.59",
+    "cryptocurrency-icons": "^0.18.1",
+    "esbuild": "^0.28.2",
+    "ethers": "^6.17.0",
+    "qrcode": "^1.5.4"
+  }
+}
