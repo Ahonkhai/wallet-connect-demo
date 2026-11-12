@@ -71,11 +71,6 @@ button.chip[aria-pressed="true"] small { color: var(--accent); }
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>Wallet Connect Demo</h1>
-    <p class="lede">Connects to real wallets on EVM chains, Solana, Bitcoin and TON. The connect button opens a wallet list (MetaMask, Trust, SafePal, Phantom and hundreds more). Every request and answer shows in the wire log.</p>
-  </header>
-
   <div class="grid">
     <section class="panel">
       <h2>Connect</h2>
@@ -90,28 +85,11 @@ button.chip[aria-pressed="true"] small { color: var(--accent); }
       <div class="out" id="session"><span class="k">Not connected.</span></div>
     </section>
 
-    <section class="panel">
-      <h2>Use the connection</h2>
-      <div class="row">
-        <input type="text" id="msg" aria-label="Message to sign" value="I am learning how wallets sign things.">
-        <button id="sign" disabled>Sign message</button>
-      </div>
-      <div class="out" id="sig"><span class="k">Signing a message is free and stays off-chain.</span></div>
-      <h3>Send the native coin</h3>
-      <label class="label" for="to">To (starts as your own address)</label>
-      <input type="text" id="to" autocomplete="off" spellcheck="false">
-      <label class="label" for="amount">Amount <span id="unit"></span></label>
-      <div class="row">
-        <input type="text" id="amount" inputmode="decimal" autocomplete="off">
-        <button id="send" disabled>Send</button>
-      </div>
-      <div class="out" id="tx"><span class="k">This sends a real transaction and costs a network fee. Use a testnet while learning.</span></div>
-    </section>
   </div>
 
   <section style="display:flex;flex-direction:column;gap:12px">
     <div class="log-head"><h2>Wire log</h2><button class="ghost" id="log-clear">Clear</button></div>
-    <p class="empty" id="log-empty">Nothing sent yet. Connect a wallet and sign a message, and the requests appear here.</p>
+    <p class="empty" id="log-empty">Nothing yet. Connect a wallet or switch network and it appears here.</p>
     <ol id="log"></ol>
   </section>
 </div>

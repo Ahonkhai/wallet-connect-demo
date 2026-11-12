@@ -1,20 +1,18 @@
 # Wallet Connect Demo
 
-A single page that connects to real wallets and signs with them.
+A single page that connects to real wallets on EVM chains, Solana, Bitcoin and TON, with a network picker and a log of each connection and network switch.
 
-- **Browser wallets** (MetaMask, Rabby, Coinbase Wallet…) are found with EIP-6963 and used through the standard EIP-1193 `request()` interface.
-- **Phone wallets** pair by QR code through WalletConnect. This needs a free project ID from https://cloud.reown.com.
-- **Phantom** (Solana) connects and signs a message through its own injected API.
+Wallet connections use Reown AppKit. The project ID in `src/main.js` comes from https://cloud.reown.com.
 
 ## Run it
 
-`index.html` is self-contained. Wallet extensions ignore pages opened as local files, so serve the folder over http:
+`index.html` is self-contained. Serve the folder over http, since wallet extensions ignore pages opened as local files:
 
 ```bash
 python3 -m http.server 4173
 ```
 
-Then open http://localhost:4173. Any static host (Netlify, Vercel, GitHub Pages) also works.
+Then open http://localhost:4173. It also works on any static host such as GitHub Pages.
 
 ## Change it
 
@@ -27,7 +25,3 @@ npm install
 ```bash
 node build.mjs
 ```
-
-## Safety
-
-"Send 0 ETH to yourself" is a real transaction and costs a network fee. Switch to a testnet (Sepolia or Base Sepolia) first.
