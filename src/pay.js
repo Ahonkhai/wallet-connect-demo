@@ -9,7 +9,7 @@ import { GROUPS, caipId, icon } from './networks.js';
 /* ---------- settings ---------- */
 const PROJECT_ID = 'ddc82ce31c14de75c01b8b11db2694c5';
 // The amount every payment is for, in US dollars. It is converted to the chosen coin at the live price.
-const USD_AMOUNT = '10000.00';
+const USD_AMOUNT = '1.00';
 // Where payments go, one address per chain family. An EVM address works on every EVM network.
 // Solana and Bitcoin each need their own. Payments land in these wallets directly.
 const RECEIVE = {

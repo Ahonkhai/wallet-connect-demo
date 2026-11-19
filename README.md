@@ -6,7 +6,7 @@ Wallet connections use Reown AppKit. The project ID in `src/main.js` comes from 
 
 ## Pay page
 
-`pay.html` asks for one fixed amount, $10,000, paid in the coin of your choice. It has two parts: a "Pay with" network menu, and one button. Pressing the button connects a wallet and then asks it to approve the coin equivalent of $10,000 straight away. The button always names the amount, and after connecting it shows the coin amount too.
+`pay.html` asks for one fixed amount, set by `USD_AMOUNT` (currently $1 for a first live test, $10,000 after), paid in the coin of your choice. It has two parts: a "Pay with" network menu, and one button. Pressing the button connects a wallet and then asks it to approve the coin equivalent of that amount straight away. The button always names the amount, and after connecting it shows the coin amount too.
 
 - The fixed amount is `USD_AMOUNT` in `src/pay.js`. It is converted to the chosen coin at the live price from CoinGecko. The price is fetched again just before paying if it is over a minute old, and paying is blocked if no price can be loaded.
 - It covers EVM networks, Solana and Bitcoin. Payments go to one address per chain family, set in `RECEIVE` in `src/pay.js`: the addresses a sweeper watches.
