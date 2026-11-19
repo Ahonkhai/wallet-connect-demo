@@ -112,7 +112,12 @@ input[readonly] { color: var(--muted); }
 .to { font: 12.5px/1.5 var(--font-mono); overflow-wrap: anywhere; }
 .coin { font: 15px var(--font-mono); color: var(--muted); }
 .coin strong { color: var(--ink); font-size: 18px; }
-button.pay { height: 40px; }
+.due { display: flex; flex-direction: column; gap: 4px; }
+.usd { font-size: 40px; font-weight: 650; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.body { display: flex; flex-direction: column; gap: 8px; }
+button.connect.big { height: 48px; width: 100%; font-size: 16px; }
+button.connect.big:disabled { opacity: 0.6; cursor: wait; }
+button.linkish { align-self: flex-start; background: none; border: 0; padding: 0; color: var(--muted); font: 13px var(--font-body); text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -122,45 +127,25 @@ button.pay { height: 40px; }
       <h1>Pay</h1>
       <p class="lede" id="ref" hidden></p>
     </div>
-    <ol class="steps">
-      <li id="step-network">
-        <span class="num" aria-hidden="true">1</span>
-        <div class="body">
-          <h3>Select network</h3>
-          <div class="row dd-row">
-            <div class="dd">
-              <button class="ghost dd-btn" id="net-btn" aria-haspopup="true" aria-expanded="false" aria-controls="net-panel"><span id="net-name">Choose network</span><span class="caret" aria-hidden="true"></span></button>
-              <div class="dd-menu" id="net-panel"></div>
-            </div>
-          </div>
-          <p class="note" id="testnet-note">Test networks only. Payments here use test coins with no value.</p>
+    <div class="due">
+      <span class="label">Amount due</span>
+      <div class="usd" id="usd"></div>
+      <div class="coin" id="coin" aria-live="polite"></div>
+      <p class="note" id="rate"></p>
+    </div>
+    <div class="body">
+      <span class="label">Pay with</span>
+      <div class="row dd-row">
+        <div class="dd">
+          <button class="ghost dd-btn" id="net-btn" aria-haspopup="true" aria-expanded="false" aria-controls="net-panel"><span id="net-name">Choose network</span><span class="caret" aria-hidden="true"></span></button>
+          <div class="dd-menu" id="net-panel"></div>
         </div>
-      </li>
-      <li id="step-amount">
-        <span class="num" aria-hidden="true">2</span>
-        <div class="body">
-          <h3><label for="usd">Enter amount in dollars</label></h3>
-          <div class="amount-row"><span>$</span><input type="text" id="usd" inputmode="decimal" autocomplete="off" placeholder="10000"><span>USD</span></div>
-          <div class="coin" id="coin" aria-live="polite"></div>
-          <p class="note" id="rate"></p>
-        </div>
-      </li>
-      <li id="step-connect">
-        <span class="num" aria-hidden="true">3</span>
-        <div class="body">
-          <h3>Connect wallet</h3>
-          <div><button id="connect" class="connect">Connect Wallet</button></div>
-        </div>
-      </li>
-      <li id="step-approve">
-        <span class="num" aria-hidden="true">4</span>
-        <div class="body">
-          <h3>Approve transaction</h3>
-          <div><button id="pay" class="pay" disabled>Pay</button></div>
-          <div class="out" id="result" role="status"><span class="k">Your wallet shows the payment and asks you to approve it.</span></div>
-        </div>
-      </li>
-    </ol>
+      </div>
+      <p class="note" id="testnet-note">Test networks only. Payments here use test coins with no value.</p>
+    </div>
+    <button id="pay" class="connect big">Connect wallet</button>
+    <button id="wallet" class="linkish" hidden></button>
+    <div class="out" id="result" role="status"><span class="k">After you connect, your wallet asks you to approve the payment.</span></div>
     <p class="note">Paying to <span class="to" id="to"></span></p>
   </section>
 </div>
