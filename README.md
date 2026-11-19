@@ -6,13 +6,12 @@ Wallet connections use Reown AppKit. The project ID in `src/main.js` comes from 
 
 ## Pay page
 
-`pay.html` asks for one fixed amount, set by `USD_AMOUNT` (currently $1 for a first live test, $10,000 after), paid in the coin of your choice. It has two parts: a "Pay with" network menu, and one button. Pressing the button connects a wallet and then asks it to approve the coin equivalent of that amount straight away. The button always names the amount, and after connecting it shows the coin amount too.
+`pay.html` is a learning demo of a click-and-pay checkout on test networks. It has a "Pay with" network menu and one button: pressing it connects a wallet, then asks the wallet to approve a fixed amount, `USD_AMOUNT` in `src/pay.js`, converted to the chosen coin at the live CoinGecko price.
 
-- The fixed amount is `USD_AMOUNT` in `src/pay.js`. It is converted to the chosen coin at the live price from CoinGecko. The price is fetched again just before paying if it is over a minute old, and paying is blocked if no price can be loaded.
-- It covers EVM networks, Solana and Bitcoin. Payments go to one address per chain family, set in `RECEIVE` in `src/pay.js`: the addresses a sweeper watches.
-- It uses real networks and real money: payments go straight to the wallets in `RECEIVE`. Setting `TESTNETS_ONLY` to `true` in `src/pay.js` offers test networks instead, for trying changes with test coins; swap in test addresses at the same time. Test coins have no price of their own, so test networks use the real coin's price.
-- Not every wallet supports every test network. Trust Wallet, for example, does not support Solana Devnet; the page then says so.
-- A payment link can fix the network: `pay.html?network=11155111`. The network is an EVM chain id, or `solana` or `bitcoin`.
+- Test networks only, so no real money moves: Sepolia, Base Sepolia, Arbitrum Sepolia, Polygon Amoy, BNB Smart Chain Testnet and Solana Devnet. Test coins have no price of their own, so the real coin's price is used.
+- Payments go to the addresses in `RECEIVE` in `src/pay.js`. Bitcoin is left out until a test-network (`tb1`) address is added.
+- Fixes for wallet quirks: the request waits a moment after connecting, transfers include an empty `data` field (some iPhone wallets fail without one), and the built-in Coinbase option is off because its library fails in Safari. Coinbase Wallet still connects by QR code.
+- A link can fix the network: `pay.html?network=11155111`. The network is an EVM chain id, or `solana`.
 
 ## Run it
 

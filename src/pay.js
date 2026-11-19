@@ -15,11 +15,11 @@ const USD_AMOUNT = '1.00';
 const RECEIVE = {
   eip155: '0xc9376c2E238b91D72760f726370BC17FC570E096',
   solana: '9nnnLu4AiLctu5tzRN7mEaJkpQBYjERdk49vMu18CXoP',
-  bip122: 'bc1qu7ffey507z55m4q3hzwda5vjcnk5vqnlkz4uru',
+  // Bitcoin is left out: a test-network payment needs a separate tb1 address.
 };
-// false = real networks, real money. true = test networks only, for trying changes with test coins.
-// The addresses above are real-network addresses, so keep this false unless you also swap in test addresses.
-const TESTNETS_ONLY = false;
+// true = test networks only: this page is a learning demo, and test coins have no value.
+// The EVM and Solana addresses above exist on the test networks too, with the same keys.
+const TESTNETS_ONLY = true;
 // Prices older than this are fetched again before a payment is sent.
 const PRICE_MAX_AGE_MS = 60_000;
 
@@ -84,6 +84,8 @@ const modal = createAppKit({
     '0b415a746fb9ee99cce155c2ceca0c6f6061b1dbca2d722b3ba16381d0562150',
   ],
   experimental_preferUniversalLinks: true,
+  // Off: its Base Account library fails in Safari ("sm.CHAIN_IDS"). Coinbase Wallet still connects by QR code.
+  enableCoinbase: false,
   features: { analytics: false, email: false, socials: [], swaps: false, onramp: false },
 });
 
@@ -234,7 +236,7 @@ $('net-panel').onclick = async (ev) => {
 async function send(c, units) {
   const to = RECEIVE[c.ns];
   if (c.ns === 'eip155') {
-    return c.provider.request({ method: 'eth_sendTransaction', params: [{ from: c.address, to, value: '0x' + units.toString(16) }] });
+    return c.provider.request({ method: 'eth_sendTransaction', params: [{ from: c.address, to, value: '0x' + units.toString(16), data: '0x' }] });
   }
   if (c.ns === 'solana') {
     // Solana needs a recent blockhash from a node before the wallet can sign.

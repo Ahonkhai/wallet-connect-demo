@@ -57,6 +57,8 @@ const modal = createAppKit({
   ],
   // Prefer https links to wallets: if the app is missing, the phone shows its download page instead of an error.
   experimental_preferUniversalLinks: true,
+  // Off: its Base Account library fails in Safari ("sm.CHAIN_IDS"). Coinbase Wallet still connects by QR code.
+  enableCoinbase: false,
   features: { analytics: false, email: false, socials: [], swaps: false, onramp: false },
 });
 

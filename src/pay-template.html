@@ -117,12 +117,14 @@ input[readonly] { color: var(--muted); }
 .body { display: flex; flex-direction: column; gap: 8px; }
 button.connect.big { height: 48px; width: 100%; font-size: 16px; }
 button.connect.big:disabled { opacity: 0.6; cursor: wait; }
+.demo { margin: 0; font: 600 11px var(--font-body); letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent); }
 button.linkish { align-self: flex-start; background: none; border: 0; padding: 0; color: var(--muted); font: 13px var(--font-body); text-decoration: underline; }
 </style>
 </head>
 <body>
 <div class="wrap pay">
   <section class="panel">
+    <p class="demo">Learning demo · test networks only · test coins have no value</p>
     <div class="body">
       <span class="label">Pay with</span>
       <div class="row dd-row">
