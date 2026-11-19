@@ -123,16 +123,6 @@ button.linkish { align-self: flex-start; background: none; border: 0; padding: 0
 <body>
 <div class="wrap pay">
   <section class="panel">
-    <div>
-      <h1>Pay</h1>
-      <p class="lede" id="ref" hidden></p>
-    </div>
-    <div class="due">
-      <span class="label">Amount due</span>
-      <div class="usd" id="usd"></div>
-      <div class="coin" id="coin" aria-live="polite"></div>
-      <p class="note" id="rate"></p>
-    </div>
     <div class="body">
       <span class="label">Pay with</span>
       <div class="row dd-row">
@@ -141,12 +131,10 @@ button.linkish { align-self: flex-start; background: none; border: 0; padding: 0
           <div class="dd-menu" id="net-panel"></div>
         </div>
       </div>
-      <p class="note" id="testnet-note">Test networks only. Payments here use test coins with no value.</p>
     </div>
     <button id="pay" class="connect big">Connect wallet</button>
     <button id="wallet" class="linkish" hidden></button>
-    <div class="out" id="result" role="status"><span class="k">After you connect, your wallet asks you to approve the payment.</span></div>
-    <p class="note">Paying to <span class="to" id="to"></span></p>
+    <div class="out" id="result" role="status" hidden></div>
   </section>
 </div>
 <script>/*BUNDLE*/</script>

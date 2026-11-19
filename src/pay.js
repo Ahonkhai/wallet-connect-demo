@@ -24,7 +24,16 @@ const PRICE_MAX_AGE_MS = 60_000;
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const errText = (e) => (e && e.shortMessage) || (e && e.message) || String(e);
+const rawErr = (e) => (e && e.shortMessage) || (e && e.message) || String(e);
+// Turn the wallets' terse errors into something a person can act on.
+function errText(e, net) {
+  const text = rawErr(e);
+  if (/invalid chain|unsupported chain|chain.*not supported|unrecognized chain/i.test(text) && net) {
+    return `Your wallet does not support ${net.name}. Pick another network, or use a wallet that supports it.`;
+  }
+  if (/user rejected|user denied|rejected the request|cancel/i.test(text)) return 'You cancelled the payment in your wallet.';
+  return text;
+}
 const usdFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const nsOf = (n) => caipId(n).split(':')[0];
 const dueText = usdFmt.format(Number(USD_AMOUNT));
@@ -39,11 +48,10 @@ const PAY_GROUPS = GROUPS
   .filter((g) => g.nets.length);
 const nets = PAY_GROUPS.flatMap((g) => g.nets);
 
-// A payment link can fix the network and show a reference: pay.html?network=11155111&ref=1042
+// A payment link can fix the network: pay.html?network=11155111
 // The network is an EVM chain id, or "solana" / "bitcoin".
 const link = new URLSearchParams(location.search);
 const linkNet = nets.find((n) => String(n.id) === link.get('network') || (link.get('network') === 'solana' && nsOf(n) === 'solana') || (link.get('network') === 'bitcoin' && nsOf(n) === 'bip122'));
-const ref = (link.get('ref') || '').slice(0, 40);
 let selected = linkNet || nets[0];
 
 const modal = createAppKit({
@@ -119,27 +127,23 @@ function render() {
   const c = current();
   const on = !!(c.address && c.provider);
   const q = quote();
-  const p = priceOf();
   const sym = selected.nativeCurrency.symbol;
   $('net-name').innerHTML = icon(selected) + esc(selected.name);
   document.querySelectorAll('#net-panel .chip').forEach((el) => el.setAttribute('aria-pressed', String(el.dataset.id === caipId(selected))));
-  $('usd').textContent = dueText;
-  $('to').textContent = RECEIVE[c.ns];
-  if (q) {
-    $('coin').innerHTML = `≈ <strong>${esc(coinText(q))} ${esc(sym)}</strong>`;
-    $('rate').textContent = `1 ${sym} = ${usdFmt.format(q.price)} · price from ${new Date(q.at).toLocaleTimeString()}`;
-  } else {
-    $('coin').textContent = priceError ? '' : 'Loading price…';
-    $('rate').textContent = priceError || (p ? `1 ${sym} = ${usdFmt.format(p.usd)}` : '');
-  }
-  $('rate').className = priceError ? 'note bad' : 'note';
   $('wallet').textContent = on ? `Connected: ${c.address.slice(0, 6)}…${c.address.slice(-4)} · Disconnect` : '';
   $('wallet').hidden = !on;
-  // One button: connect first, then approve.
+  // One button: connect first, then approve. It always names what is being paid.
   $('pay').disabled = paying || (on && !q);
   $('pay').textContent = paying ? 'Waiting for your wallet…'
     : !on ? `Connect wallet to pay ${dueText}`
-    : q ? `Approve ${coinText(q)} ${sym}` : 'Loading price…';
+    : q ? `Approve ${coinText(q)} ${sym} (${dueText})`
+    : priceError ? 'Price unavailable, try again shortly' : 'Loading price…';
+}
+
+// A message under the button, shown only when there is something to say.
+function say(html) {
+  $('result').innerHTML = html;
+  $('result').hidden = !html;
 }
 
 // Follow the network the wallet is on, when it is one this page offers.
@@ -176,7 +180,8 @@ $('net-panel').onclick = async (ev) => {
   selected = nets.find((n) => caipId(n) === chip.dataset.id);
   setMenu(false);
   render();
-  try { await modal.switchNetwork(selected); } catch (e) { $('result').innerHTML = `<span class="bad">${esc(errText(e))}</span>`; }
+  say('');
+  try { await modal.switchNetwork(selected); } catch (e) { say(`<span class="bad">${esc(errText(e, selected))}</span>`); }
   render();
 };
 
@@ -215,21 +220,22 @@ async function pay() {
     const c = current();
     if (!c.address || !c.provider) throw new Error(`Your wallet is not connected on ${selected.name}. Connect a wallet that supports it.`);
     const sym = selected.nativeCurrency.symbol;
-    $('result').innerHTML = `<span class="k">Check your wallet. It will ask you to approve ${esc(coinText(q))} ${esc(sym)} (${esc(dueText)}).</span>`;
+    say(`<span class="k">Check your wallet. It will ask you to approve ${esc(coinText(q))} ${esc(sym)} (${esc(dueText)}).</span>`);
     const id = await send(c, q.units);
     const explorer = selected.blockExplorers?.default?.url;
-    $('result').innerHTML =
+    say(
       `<span class="good">Payment sent: ${esc(coinText(q))} ${esc(sym)}, worth ${esc(dueText)} at ${esc(usdFmt.format(q.price))} per ${esc(sym)}.</span><br>` +
       `<span class="k">transaction id: </span>${esc(id)}` +
-      (explorer && c.ns === 'eip155' ? `<br><a href="${esc(explorer)}/tx/${esc(id)}" target="_blank" rel="noopener">View on the block explorer</a>` : '');
+      (explorer && c.ns === 'eip155' ? `<br><a href="${esc(explorer)}/tx/${esc(id)}" target="_blank" rel="noopener">View on the block explorer</a>` : ''));
   } catch (e) {
-    $('result').innerHTML = `<span class="bad">${esc(errText(e))}</span>`;
+    say(`<span class="bad">${esc(errText(e, selected))}</span>`);
   }
   paying = false;
   render();
 }
 
 $('pay').onclick = () => {
+  say('');
   const c = current();
   if (c.address && c.provider) return pay();
   payAfterConnect = true;          // the payment request follows as soon as the wallet connects
@@ -241,8 +247,6 @@ modal.subscribeState((st) => { if (!st.open && !current().address) payAfterConne
 
 /* ---------- start ---------- */
 if (linkNet) $('net-btn').disabled = true;
-if (ref) { $('ref').textContent = `Invoice ${ref}`; $('ref').hidden = false; }
-$('testnet-note').hidden = !TESTNETS_ONLY;
 modal.subscribeAccount(onWalletChange);
 modal.subscribeNetwork(onWalletChange);
 modal.subscribeProviders(onWalletChange);

@@ -6,12 +6,13 @@ Wallet connections use Reown AppKit. The project ID in `src/main.js` comes from 
 
 ## Pay page
 
-`pay.html` asks for one fixed amount, $10,000, paid in the coin of your choice. It shows the amount due, a "Pay with" network menu, and one button. Pressing the button connects a wallet and then asks it to approve the coin equivalent of $10,000 straight away.
+`pay.html` asks for one fixed amount, $10,000, paid in the coin of your choice. It has two parts: a "Pay with" network menu, and one button. Pressing the button connects a wallet and then asks it to approve the coin equivalent of $10,000 straight away. The button always names the amount, and after connecting it shows the coin amount too.
 
-- The fixed amount is `USD_AMOUNT` in `src/pay.js`. It is converted to the chosen coin at the live price from CoinGecko, and both are shown before the wallet asks for approval. The price is fetched again just before paying if it is over a minute old, and paying is blocked if no price can be loaded.
+- The fixed amount is `USD_AMOUNT` in `src/pay.js`. It is converted to the chosen coin at the live price from CoinGecko. The price is fetched again just before paying if it is over a minute old, and paying is blocked if no price can be loaded.
 - It covers EVM networks, Solana and Bitcoin. Payments go to one address per chain family, set in `RECEIVE` in `src/pay.js`: the addresses a sweeper watches.
 - It offers test networks only until you set `TESTNETS_ONLY` to `false` in `src/pay.js`. Do that only after every address in `RECEIVE` is a wallet whose key only you hold. Test coins have no price of their own, so test networks use the real coin's price.
-- A payment link can fix the network and show a reference: `pay.html?network=11155111&ref=1042`. The network is an EVM chain id, or `solana` or `bitcoin`.
+- Not every wallet supports every test network. Trust Wallet, for example, does not support Solana Devnet; the page then says so.
+- A payment link can fix the network: `pay.html?network=11155111`. The network is an EVM chain id, or `solana` or `bitcoin`.
 
 ## Run it
 
