@@ -123,6 +123,11 @@ const coinText = (q) => {
 /* ---------- page ---------- */
 let payAfterConnect = false;   // set when the button is pressed before a wallet is connected
 let paying = false;
+let attempt = 0;               // counts payment requests, so a request that was given up on is ignored if it answers late
+// Some phone wallets miss a request that arrives the instant a connection is approved, so wait a moment first.
+const SETTLE_MS = 2500;
+// After this long with no answer, offer to start over.
+const STUCK_MS = 20_000;
 
 function render() {
   const c = current();
@@ -181,7 +186,10 @@ function onWalletChange() {
   followWallet();
   if (payAfterConnect && connectedFamilies().length) {
     payAfterConnect = false;
-    if (matchWalletFamily()) pay();
+    if (matchWalletFamily()) {
+      say('<span class="k">Connected. Sending the payment request to your wallet…</span>');
+      setTimeout(pay, SETTLE_MS);
+    }
   }
   render();
 }
@@ -233,6 +241,8 @@ async function send(c, units) {
 async function pay() {
   if (paying) return;
   paying = true;
+  const mine = ++attempt;
+  let stuck;
   render();
   try {
     // Never pay on an old price: refresh it first, then quote again.
@@ -243,17 +253,38 @@ async function pay() {
     const c = current();
     if (!c.address || !c.provider) throw new Error(`Your wallet is not connected on ${selected.name}. Connect a wallet that supports it.`);
     const sym = selected.nativeCurrency.symbol;
-    say(`<span class="k">Check your wallet. It will ask you to approve ${esc(coinText(q))} ${esc(sym)} (${esc(dueText)}).</span>`);
+    const waiting = `<span class="k">Open your wallet and approve ${esc(coinText(q))} ${esc(sym)} (${esc(dueText)}). If the wallet is on your phone, open the app: the request is waiting there.</span>`;
+    say(waiting);
+    stuck = setTimeout(() => {
+      if (mine !== attempt) return;
+      say(waiting + '<br><br><span class="k">Still nothing in your wallet? Reject any earlier payment request you can see there, so you do not pay twice, then start over.</span><br><button class="ghost" id="restart">Start over</button>');
+      $('restart').onclick = startOver;
+    }, STUCK_MS);
     const id = await send(c, q.units);
+    if (mine !== attempt) return;    // the person started over; ignore this late answer
     const explorer = selected.blockExplorers?.default?.url;
     say(
       `<span class="good">Payment sent: ${esc(coinText(q))} ${esc(sym)}, worth ${esc(dueText)} at ${esc(usdFmt.format(q.price))} per ${esc(sym)}.</span><br>` +
       `<span class="k">transaction id: </span>${esc(id)}` +
       (explorer && c.ns === 'eip155' ? `<br><a href="${esc(explorer)}/tx/${esc(id)}" target="_blank" rel="noopener">View on the block explorer</a>` : ''));
   } catch (e) {
+    if (mine !== attempt) return;
     say(`<span class="bad">${esc(errText(e, selected))}</span>`);
+  } finally {
+    clearTimeout(stuck);
   }
+  if (mine !== attempt) return;
   paying = false;
+  render();
+}
+
+// Give up on the current request: disconnect, so the next press connects afresh.
+async function startOver() {
+  attempt++;
+  paying = false;
+  payAfterConnect = false;
+  try { await modal.disconnect(); } catch { /* already disconnected */ }
+  say('<span class="k">Disconnected. Press the button to connect and pay again.</span>');
   render();
 }
 
