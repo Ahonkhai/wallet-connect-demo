@@ -44,8 +44,17 @@ const PRICE_ID = { ETH: 'ethereum', POL: 'polygon-ecosystem-token', BNB: 'binanc
 const priceId = (n) => PRICE_ID[n.nativeCurrency.symbol];
 
 // The networks offered: the chain families with a receive address, and only coins with a known price.
+// The networks offered. Keep this list short: when a wallet connects, it is asked for every network here at once,
+// and some wallets (Bitget, for one) refuse to connect until the person has added each of them.
+// Real networks first, then their test networks.
+const PAY_CHAINS = [
+  'eip155:1', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp', 'bip122:000000000019d6689c085ae165831e93',
+  'eip155:56', 'eip155:8453', 'eip155:42161', 'eip155:137',
+  'eip155:11155111', 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1', 'bip122:000000000933ea01ad0ee984209779ba',
+  'eip155:97', 'eip155:84532', 'eip155:421614', 'eip155:80002',
+];
 const PAY_GROUPS = GROUPS
-  .map((g) => ({ title: g.title, nets: g.nets.filter((n) => RECEIVE[nsOf(n)] && priceId(n) && (TESTNETS_ONLY ? n.testnet : !n.testnet)) }))
+  .map((g) => ({ title: g.title, nets: g.nets.filter((n) => PAY_CHAINS.includes(caipId(n)) && RECEIVE[nsOf(n)] && priceId(n) && (TESTNETS_ONLY ? n.testnet : !n.testnet)) }))
   .filter((g) => g.nets.length);
 const nets = PAY_GROUPS.flatMap((g) => g.nets);
 
