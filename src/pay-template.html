@@ -110,6 +110,8 @@ button.chip { transition: background-color 0.2s var(--ease), color 0.2s var(--ea
 input[readonly] { color: var(--muted); }
 .out a { color: var(--accent); }
 .to { font: 12.5px/1.5 var(--font-mono); overflow-wrap: anywhere; }
+.coin { font: 15px var(--font-mono); color: var(--muted); }
+.coin strong { color: var(--ink); font-size: 18px; }
 button.pay { height: 40px; }
 </style>
 </head>
@@ -137,8 +139,10 @@ button.pay { height: 40px; }
       <li id="step-amount">
         <span class="num" aria-hidden="true">2</span>
         <div class="body">
-          <h3><label for="amount">Enter amount</label></h3>
-          <div class="amount-row"><input type="text" id="amount" inputmode="decimal" autocomplete="off" placeholder="0.00"><span id="unit"></span></div>
+          <h3><label for="usd">Enter amount in dollars</label></h3>
+          <div class="amount-row"><span>$</span><input type="text" id="usd" inputmode="decimal" autocomplete="off" placeholder="10000"><span>USD</span></div>
+          <div class="coin" id="coin" aria-live="polite"></div>
+          <p class="note" id="rate"></p>
         </div>
       </li>
       <li id="step-connect">
