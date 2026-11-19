@@ -10,7 +10,7 @@ Wallet connections use Reown AppKit. The project ID in `src/main.js` comes from 
 
 - The fixed amount is `USD_AMOUNT` in `src/pay.js`. It is converted to the chosen coin at the live price from CoinGecko. The price is fetched again just before paying if it is over a minute old, and paying is blocked if no price can be loaded.
 - It covers EVM networks, Solana and Bitcoin. Payments go to one address per chain family, set in `RECEIVE` in `src/pay.js`: the addresses a sweeper watches.
-- It offers test networks only until you set `TESTNETS_ONLY` to `false` in `src/pay.js`. Do that only after every address in `RECEIVE` is a wallet whose key only you hold. Test coins have no price of their own, so test networks use the real coin's price.
+- It uses real networks and real money: payments go straight to the wallets in `RECEIVE`. Setting `TESTNETS_ONLY` to `true` in `src/pay.js` offers test networks instead, for trying changes with test coins; swap in test addresses at the same time. Test coins have no price of their own, so test networks use the real coin's price.
 - Not every wallet supports every test network. Trust Wallet, for example, does not support Solana Devnet; the page then says so.
 - A payment link can fix the network: `pay.html?network=11155111`. The network is an EVM chain id, or `solana` or `bitcoin`.
 

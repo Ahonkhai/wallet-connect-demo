@@ -10,15 +10,16 @@ import { GROUPS, caipId, icon } from './networks.js';
 const PROJECT_ID = 'ddc82ce31c14de75c01b8b11db2694c5';
 // The amount every payment is for, in US dollars. It is converted to the chosen coin at the live price.
 const USD_AMOUNT = '10000.00';
-// Where payments go, one address per chain family: the addresses the sweeper watches.
-// An EVM address works on every EVM network. Solana and Bitcoin each need their own.
+// Where payments go, one address per chain family. An EVM address works on every EVM network.
+// Solana and Bitcoin each need their own. Payments land in these wallets directly.
 const RECEIVE = {
-  eip155: '0xf30c50b0a2473b3fFB401ee86B0a950d96E45849',
-  solana: '5GSxxtng71799WjsCSYz2khGwFVqXyCrUm7EKGu7UD86',
-  bip122: 'tb1qg7aq2w7csjgmllvfk26qgqla2secff7nsd9v6k',
+  eip155: '0xc9376c2E238b91D72760f726370BC17FC570E096',
+  solana: '9nnnLu4AiLctu5tzRN7mEaJkpQBYjERdk49vMu18CXoP',
+  bip122: 'bc1qu7ffey507z55m4q3hzwda5vjcnk5vqnlkz4uru',
 };
-// true = only test networks are offered. Set it to false once every address above is a wallet whose key only you hold.
-const TESTNETS_ONLY = true;
+// false = real networks, real money. true = test networks only, for trying changes with test coins.
+// The addresses above are real-network addresses, so keep this false unless you also swap in test addresses.
+const TESTNETS_ONLY = false;
 // Prices older than this are fetched again before a payment is sent.
 const PRICE_MAX_AGE_MS = 60_000;
 
@@ -44,7 +45,7 @@ const priceId = (n) => PRICE_ID[n.nativeCurrency.symbol];
 
 // The networks offered: the chain families with a receive address, and only coins with a known price.
 const PAY_GROUPS = GROUPS
-  .map((g) => ({ title: g.title, nets: g.nets.filter((n) => RECEIVE[nsOf(n)] && priceId(n) && (!TESTNETS_ONLY || n.testnet)) }))
+  .map((g) => ({ title: g.title, nets: g.nets.filter((n) => RECEIVE[nsOf(n)] && priceId(n) && (TESTNETS_ONLY ? n.testnet : !n.testnet)) }))
   .filter((g) => g.nets.length);
 const nets = PAY_GROUPS.flatMap((g) => g.nets);
 
