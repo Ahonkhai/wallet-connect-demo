@@ -33,8 +33,13 @@ function errText(e, net) {
     return `Your wallet does not support ${net.name}. Pick another network, or use a wallet that supports it.`;
   }
   if (/user rejected|user denied|rejected the request|cancel/i.test(text)) return 'You cancelled the payment in your wallet.';
+  if (/method not found|not supported|unsupported method/i.test(text) || (e && e.code === -32601)) {
+    return `Your wallet refused the ${e && e.step ? e.step : 'request'} ("${text}"). This wallet may not take payments from websites on ${net ? net.name : 'this network'}. Pick another network, or use another wallet.`;
+  }
   return text;
 }
+// Label an error with the step that failed, so the message can say which request the wallet refused.
+const tagged = (step, e) => Object.assign(e instanceof Error ? e : new Error(rawErr(e)), { step, code: e && e.code });
 const usdFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const nsOf = (n) => caipId(n).split(':')[0];
 const dueText = usdFmt.format(Number(USD_AMOUNT));
@@ -151,7 +156,7 @@ function render() {
   $('pay').disabled = paying || (on && !q);
   $('pay').textContent = paying ? 'Waiting for your wallet…'
     : !on ? `Connect wallet to pay ${dueText}`
-    : q ? `Approve ${coinText(q)} ${sym} (${dueText})`
+    : q ? `Send the request to my wallet again (${coinText(q)} ${sym})`
     : priceError ? 'Price unavailable, try again shortly' : 'Loading price…';
 }
 
@@ -258,7 +263,9 @@ async function pay() {
     if (!priceOf() || Date.now() - priceOf().at > PRICE_MAX_AGE_MS) await fetchPrices();
     const q = quote();
     if (!q) throw new Error(priceError || 'No price is available for this coin yet.');
-    if (caipId(current().network || {}) !== caipId(selected)) await modal.switchNetwork(selected);
+    if (caipId(current().network || {}) !== caipId(selected)) {
+      try { await modal.switchNetwork(selected); } catch (e) { throw tagged(`switch to ${selected.name}`, e); }
+    }
     const c = current();
     if (!c.address || !c.provider) throw new Error(`Your wallet is not connected on ${selected.name}. Connect a wallet that supports it.`);
     const sym = selected.nativeCurrency.symbol;
@@ -269,7 +276,8 @@ async function pay() {
       say(waiting + '<br><br><span class="k">Still nothing in your wallet? Reject any earlier payment request you can see there, so you do not pay twice, then start over.</span><br><button class="ghost" id="restart">Start over</button>');
       $('restart').onclick = startOver;
     }, STUCK_MS);
-    const id = await send(c, q.units);
+    let id;
+    try { id = await send(c, q.units); } catch (e) { throw tagged('payment request', e); }
     if (mine !== attempt) return;    // the person started over; ignore this late answer
     const explorer = selected.blockExplorers?.default?.url;
     say(
