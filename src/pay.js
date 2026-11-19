@@ -153,14 +153,36 @@ function followWallet() {
   if (net && !linkNet) selected = net;
 }
 
+// The chain families the wallet is connected on, e.g. ['eip155'] for an Ethereum-only wallet.
+const connectedFamilies = () => Object.keys(RECEIVE).filter((ns) => modal.getAddress(ns) && modal.getProvider(ns));
+
+// When the wallet is connected, but not on the selected network's family, move to a network it can pay on.
+// Returns false, with a message, when that is not possible.
+function matchWalletFamily() {
+  const c = current();
+  if (c.address && c.provider) return true;
+  const families = connectedFamilies();
+  if (!families.length) return false;
+  const familyName = { eip155: 'EVM', solana: 'Solana', bip122: 'Bitcoin' };
+  if (linkNet) {
+    say(`<span class="bad">Your wallet connected with its ${esc(families.map((f) => familyName[f]).join(' and '))} account, but this payment is on ${esc(selected.name)}. Connect a wallet that supports ${esc(selected.name)}.</span>`);
+    return false;
+  }
+  const net = nets.find((n) => families.includes(nsOf(n)));
+  if (!net) return false;
+  const was = selected.name;
+  selected = net;
+  say(`<span class="k">Your wallet has no account on ${esc(was)}, so the payment switched to ${esc(net.name)}.</span>`);
+  return true;
+}
+
 function onWalletChange() {
   followWallet();
-  render();
-  const c = current();
-  if (payAfterConnect && c.address && c.provider) {
+  if (payAfterConnect && connectedFamilies().length) {
     payAfterConnect = false;
-    pay();
+    if (matchWalletFamily()) pay();
   }
+  render();
 }
 
 /* ---------- pay with: network menu ---------- */
@@ -236,8 +258,7 @@ async function pay() {
 
 $('pay').onclick = () => {
   say('');
-  const c = current();
-  if (c.address && c.provider) return pay();
+  if (current().address || (connectedFamilies().length && matchWalletFamily())) return pay();
   payAfterConnect = true;          // the payment request follows as soon as the wallet connects
   modal.open();
 };
